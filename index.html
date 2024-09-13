@@ -2,29 +2,43 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Mapbox GL JS Map</title>
+  <title>Advanced Mapbox Map</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-  <!-- Link to Mapbox GL JS CSS -->
+  
+  <!-- CSS Links -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css" rel="stylesheet">
-  <!-- Mapbox GL JS Script -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" rel="stylesheet">
+  <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.0/mapbox-gl-draw.css" rel="stylesheet">
+  
+  <!-- JS Links -->
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.0/mapbox-gl-draw.js"></script>
+  
   <style>
     body { margin: 0; padding: 0; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100vh; }
+    button { position: absolute; top: 10px; right: 10px; z-index: 1; padding: 10px; background-color: navy; color: white; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
+  
   <!-- Map Container -->
   <div id="map"></div>
+
+  <!-- Button to Toggle Satellite View -->
+  <button id="satelliteButton">Toggle Satellite View</button>
   
-  <!-- Initialize the Mapbox Map -->
   <script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoibWljYWhtY3ZhbmV5IiwiYSI6ImNtMHlxZG9pbDBwengyaW9mZGw2YmwybnUifQ.0Y9i985d3ou0nKOa3_7azA'; 
+    // Mapbox access token
+    mapboxgl.accessToken = 'pk.eyJ1IjoibWljYWhtY3ZhbmV5IiwiYSI6ImNtMHlxZG9pbDBwengyaW9mZGw2YmwybnUifQ.0Y9i985d3ou0nKOa3_7azA';
+
+    // Initialize the map
     const map = new mapboxgl.Map({
-      container: 'map', // container ID
-      style: 'mapbox://styles/mapbox/streets-v12', // style URL
-      center: [-74.5, 40], // starting position [lng, lat]
-      zoom: 9 // starting zoom
+      container: 'map', // Where to put the map on the page
+      style: 'mapbox://styles/mapbox/streets-v12', // Style of the map (streets view)
+      center: [-74.5, 40], // Starting position [longitude, latitude]
+      zoom: 9 // Initial zoom level
     });
 
     // Add a marker at specific coordinates with a popup
@@ -32,6 +46,55 @@
       .setLngLat([-74.5, 40]) // Set the marker's position [longitude, latitude]
       .setPopup(new mapboxgl.Popup().setHTML("<h3>Hello World</h3>")) // Attach a popup to the marker
       .addTo(map); // Add the marker to the map
+
+    // Add zoom and rotation controls to the map
+    map.addControl(new mapboxgl.NavigationControl());
+
+    // Add a search bar (geocoder) to the map
+    const geocoder = new MapboxGeocoder({
+      accessToken: mapboxgl.accessToken, // Use the same access token
+      mapboxgl: mapboxgl // Pass the map instance to the geocoder
+    });
+    map.addControl(geocoder);
+
+    // Add 3D buildings to the map
+    map.on('load', function () {
+      map.addLayer({
+        'id': '3d-buildings',
+        'source': 'composite',
+        'source-layer': 'building',
+        'type': 'fill-extrusion',
+        'minzoom': 15,
+        'paint': {
+          'fill-extrusion-color': '#aaa',
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-base': ['get', 'min_height'],
+          'fill-extrusion-opacity': 0.6
+        }
+      });
+    });
+
+    // Add a drawing tool to draw polygons on the map
+    const draw = new MapboxDraw({
+      displayControlsDefault: false,
+      controls: {
+        polygon: true, // Allow drawing polygons
+        trash: true // Enable the delete button to remove drawings
+      }
+    });
+    map.addControl(draw);
+
+    // Button to toggle between map and satellite view
+    const satelliteButton = document.getElementById('satelliteButton');
+    satelliteButton.addEventListener('click', function () {
+      const currentStyle = map.getStyle().name;
+      if (currentStyle === 'Streets') {
+        map.setStyle('mapbox://styles/mapbox/satellite-v9'); // Switch to satellite view
+      } else {
+        map.setStyle('mapbox://styles/mapbox/streets-v12'); // Switch back to street view
+      }
+    });
+
   </script>
 </body>
 </html>
